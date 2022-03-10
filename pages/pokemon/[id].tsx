@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { localFavorite } from '../../utils';
 import confeti from 'canvas-confetti';
 import { getPokemonInfo } from '../../utils/getPokemonInfo';
+import { redirect } from 'next/dist/server/api-utils';
 
 interface Props {
   pokemon: Pokemon;
@@ -109,7 +110,7 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
       params: { id }
     })),
 
-    fallback: false
+    fallback: 'blocking'
   }
 }
 
@@ -117,10 +118,22 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const { id } = params as { id: string };
 
+  const pokemon = await getPokemonInfo(id)
+
+  if( !pokemon  ){
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      }
+    }
+  }
+
   return {
     props: {
-      pokemon: await getPokemonInfo(id)
-    }
+      pokemon,
+    },
+    revalidate: 86400,
   }
 }
 
